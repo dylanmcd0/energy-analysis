@@ -8,11 +8,10 @@ st.title("ℹ️ About Energy Analysis Platform")
 st.subheader("🎯 Project Mission")
 st.markdown("""
 This platform provides comprehensive analysis and insights into US energy markets, 
-combining real-time data with advanced analytics to help users understand market 
+combining real-time data with advanced analytics to help me learn about market 
 dynamics across power, oil & gas, and energy equities sectors.
 
-**Our Goal**: Make energy market data accessible, actionable, and insightful for 
-researchers, analysts, traders, and energy professionals.
+**My Goal**: Learn more about US Energy Markets and improve technical skills in data analysis.
 """)
 
 # Platform features
@@ -102,37 +101,6 @@ for source in data_sources:
         **Coverage**: {source['coverage']}
         """)
 
-# Technology stack
-st.subheader("🛠️ Technology Stack")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("""
-    **Frontend**
-    - Streamlit
-    - Plotly
-    - Pandas
-    - NumPy
-    """)
-
-with col2:
-    st.markdown("""
-    **Backend & Data**
-    - Python
-    - SQLite
-    - AWS S3
-    - GitHub Actions
-    """)
-
-with col3:
-    st.markdown("""
-    **Deployment**
-    - Streamlit Cloud
-    - Custom Domain
-    - DigitalOcean (backup)
-    """)
-
 # Architecture diagram
 st.subheader("🏗️ System Architecture")
 
@@ -152,24 +120,6 @@ st.markdown("""
                                         └─────────────┘    └─────────────┘
 ```
 """)
-
-# Performance metrics
-st.subheader("📈 Platform Metrics")
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric("Data Points", "50M+", "↑ 2M/month")
-
-with col2:
-    st.metric("API Calls/Day", "12,000", "↑ 500")
-
-with col3:
-    st.metric("Model Accuracy", "87%", "↑ 2%")
-
-with col4:
-    st.metric("Uptime", "99.8%", "")
-
 
 # Contact and links
 st.subheader("📞 Contact & Links")

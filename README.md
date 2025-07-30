@@ -73,14 +73,14 @@ cp .env.example .env
 
 ### Start Locally
 ```bash
-streamlit run app.py
+streamlit run Home.py
 ```
 
 ## 📁 Project Structure Plan
 
 ```
 energy-analysis/
-├── app.py                 # Main Streamlit application
+├── Home.py                 # Main Streamlit application
 ├── pages/                 # Multi-page app structure
 │   ├── 1_Dashboard.py     # Home dashboard
 │   ├── 2_Fundamentals.py  # Market fundamentals

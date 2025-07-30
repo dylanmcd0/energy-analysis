@@ -31,9 +31,9 @@ def main():
     st.markdown('<h1 class="main-header">⚡ US Energy Markets Analysis</h1>', unsafe_allow_html=True)
     
     st.markdown("""
-    ### Welcome to the Energy Analysis Platform
+    ### Welcome to my Energy Analysis Platform
     
-    This platform provides comprehensive analysis of US energy markets including:
+    This platform aims to provide analysis of US energy markets for my own learning including:
     - **Power Markets**: Grid data, pricing, demand/supply metrics
     - **Oil & Gas**: Production, pricing, inventory levels  
     - **Energy Equities**: Stock performance, sector analysis
@@ -43,7 +43,7 @@ def main():
     # Navigation info
     st.sidebar.markdown("## 📊 Navigation")  
     st.sidebar.markdown("""
-    Use the pages in the sidebar to explore:
+    Use the sidebar to explore:
     - **Dashboard**: Live market data and key metrics
     - **Fundamentals**: Core market data and trends
     - **Models**: Predictive analytics and forecasting
@@ -71,16 +71,6 @@ def main():
         ### 🔮 **Models**
         Access predictive analytics, forecasting models, and quantitative analysis.
         """)
-
-    # Getting started section
-    st.markdown("---")
-    st.markdown("### 🚀 Getting Started")
-    st.markdown("""
-    1. **Visit the Dashboard** - Get live market data and price monitoring
-    2. **Check Fundamentals** - Dive into supply, demand, and pricing data
-    3. **Explore Models** - See predictive analytics and forecasts  
-    4. **Read Insights** - Market commentary and analysis
-    """)
     
     # Feature highlights
     st.markdown("---")
@@ -104,6 +94,15 @@ def main():
         - Energy sector equities
         - Regional analysis
         """)
+
+    # Coming soon section
+    st.markdown("---")
+    st.markdown("### 🚀 Coming Soon")
+    st.markdown("""
+    1. **EIA Energy Daily** - Include EIA daily insight on Dashboard page including AI summary
+    2. **More In-Depth Models** - Spark spreads, crack spreads, Monte Carlo simulations
+    4. **Inisghts** - Ability to post blog-style insights
+    """)
 
 if __name__ == "__main__":
     main()
