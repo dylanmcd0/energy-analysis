@@ -1,10 +1,10 @@
 # US Energy Markets Analysis Platform
 
-A comprehensive web application for exploring and analyzing US energy markets including power, oil & gas, and energy equities using public data sources and open-source tools.
+A personal web application for learning about and analyzing US energy markets including power, oil & gas, and energy equities using public data sources and open-source tools.
 
 ## 🎯 Project Overview
 
-This platform provides real-time insights and analysis of US energy markets through:
+This platform aims to provide (near) real-time insights and analysis of US energy markets through:
 - **Power Markets**: Grid data, pricing, demand/supply metrics
 - **Oil & Gas**: Production, pricing, inventory levels
 - **Energy Equities**: Stock performance, sector analysis
@@ -21,7 +21,7 @@ This platform provides real-time insights and analysis of US energy markets thro
   - Insights: Blog-style market analysis
   - About: Project information
 
-### Data Storage
+### Data Storage Plan
 - **Local**: CSV files and SQLite database for development
 - **Cloud**: AWS S3 Free Tier for production data and blog content
 - **Caching**: Local storage for frequently accessed data
@@ -33,12 +33,10 @@ This platform provides real-time insights and analysis of US energy markets thro
 
 ### Hosting & Deployment
 - **Primary**: Streamlit Community Cloud with custom domain
-- **Backup**: DigitalOcean Droplet if needed
-- **CDN**: S3 for static assets and blog content
 
 ## 📊 Data Sources
 
-### Public APIs & Datasets
+### Public APIs & Datasets Plan
 - **EIA (Energy Information Administration)**: Power generation, consumption
 - **FERC**: Transmission and market data  
 - **Yahoo Finance**: Energy sector equities
@@ -46,12 +44,6 @@ This platform provides real-time insights and analysis of US energy markets thro
 - **NOAA**: Weather data for demand forecasting
 
 ## 🚀 Getting Started
-
-### Prerequisites
-```bash
-python 3.12
-git
-```
 
 ### Installation
 ```bash
@@ -79,12 +71,12 @@ cp .env.example .env
 # AWS_SECRET_ACCESS_KEY=your_aws_secret (optional)
 ```
 
-### Run Locally
+### Start Locally
 ```bash
 streamlit run app.py
 ```
 
-## 📁 Project Structure
+## 📁 Project Structure Plan
 
 ```
 energy-analysis/
@@ -135,12 +127,6 @@ Public APIs → GitHub Actions → Data Processing → Storage (CSV/SQLite/S3) �
 - **Display**: Streamlit components for rendering
 - **Upload**: S3 integration for content management
 
-## 🚢 Deployment
-
-### Streamlit Community Cloud
-1. Connect GitHub repository
-2. Configure environment variables
-3. Deploy with custom domain
 
 
 ## 🔧 Development
@@ -151,14 +137,11 @@ Public APIs → GitHub Actions → Data Processing → Storage (CSV/SQLite/S3) �
 3. Add processing logic in `src/data_processor.py`
 4. Update GitHub Actions workflow
 
-### Creating New Pages
-1. Add new page file in `pages/` directory
-2. Follow naming convention: `N_PageName.py`
-3. Import required modules and data
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Planned Improvements
+1. Add weather to Dashboard page
+2. Integrate some form of local storage
+3. Set-up AWS S3 free tier
+4. Start looking into models
 
 ## 📞 Contact
 
