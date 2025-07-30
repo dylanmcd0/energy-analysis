@@ -1,6 +1,4 @@
 import streamlit as st
-import os
-from pathlib import Path
 
 # Configure page
 st.set_page_config(
@@ -28,6 +26,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 def main():
     st.markdown('<h1 class="main-header">⚡ US Energy Markets Analysis</h1>', unsafe_allow_html=True)
     
@@ -42,56 +41,69 @@ def main():
     """)
     
     # Navigation info
-    st.sidebar.markdown("## 📊 Navigation")
+    st.sidebar.markdown("## 📊 Navigation")  
     st.sidebar.markdown("""
     Use the pages in the sidebar to explore:
-    - **Dashboard**: Market overview and key metrics
+    - **Dashboard**: Live market data and key metrics
     - **Fundamentals**: Core market data and trends
     - **Models**: Predictive analytics and forecasting
     - **Insights**: Blog-style market analysis
     - **About**: Project information
     """)
     
-    # Quick stats placeholder
-    col1, col2, col3, col4 = st.columns(4)
+    # Quick access buttons
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric(
-            label="Natural Gas Price",
-            value="$2.85/MMBtu",
-            delta="0.12"
-        )
+        st.markdown("""
+        ### 📊 **Dashboard**
+        Get real-time market data, price changes, and live monitoring of energy commodities and equities.
+        """)
     
     with col2:
-        st.metric(
-            label="Crude Oil (WTI)",
-            value="$78.45/bbl",
-            delta="-1.23"
-        )
+        st.markdown("""
+        ### 📈 **Fundamentals** 
+        Deep dive into supply, demand, inventory levels, and core market fundamentals.
+        """)
     
     with col3:
-        st.metric(
-            label="Power Demand",
-            value="425 GW",
-            delta="15"
-        )
-    
-    with col4:
-        st.metric(
-            label="Energy Sector Index",
-            value="145.8",
-            delta="2.1"
-        )
-    
+        st.markdown("""
+        ### 🔮 **Models**
+        Access predictive analytics, forecasting models, and quantitative analysis.
+        """)
+
     # Getting started section
     st.markdown("---")
     st.markdown("### 🚀 Getting Started")
     st.markdown("""
-    1. **Explore the Dashboard** - Get an overview of current market conditions
+    1. **Visit the Dashboard** - Get live market data and price monitoring
     2. **Check Fundamentals** - Dive into supply, demand, and pricing data
-    3. **View Models** - See predictive analytics and forecasts
+    3. **Explore Models** - See predictive analytics and forecasts  
     4. **Read Insights** - Market commentary and analysis
     """)
+    
+    # Feature highlights
+    st.markdown("---")
+    st.markdown("### ⚡ Key Features")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        **📊 Real-time Data**
+        - Live commodity prices
+        - Energy equity tracking
+        - Percent change calculations
+        - Auto-refreshing metrics
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🔍 Comprehensive Coverage**
+        - Oil & Gas markets
+        - Power generation data
+        - Energy sector equities
+        - Regional analysis
+        """)
 
 if __name__ == "__main__":
     main()
