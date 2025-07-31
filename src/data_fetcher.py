@@ -1,5 +1,5 @@
 """
-Data fetching module for energy market APIs
+Data fetching module for energy market APIs and CSV data loading
 """
 
 import requests
@@ -8,6 +8,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import sqlite3
+import glob
 
 
 class EnergyDataFetcher:
@@ -136,6 +137,149 @@ def create_database_schema():
     
     conn.commit()
     conn.close()
+
+
+class YFinanceDataLoader:
+    """Load and process data from yfinance CSV files"""
+    
+    def __init__(self, data_dir: str = 'data/financial/yfinance'):
+        self.data_dir = data_dir
+        
+    def get_available_tickers(self) -> List[str]:
+        """Get list of available tickers from CSV files"""
+        csv_files = glob.glob(os.path.join(self.data_dir, "*.csv"))
+        tickers = []
+        for file in csv_files:
+            filename = os.path.basename(file)
+            if filename != 'update_summary.json':
+                ticker = filename.replace('.csv', '').replace('_', '=')
+                tickers.append(ticker)
+        return sorted(tickers)
+    
+    def load_ticker_data(self, ticker: str, days: int = None) -> pd.DataFrame:
+        """
+        Load historical data for a specific ticker
+        
+        Args:
+            ticker: Ticker symbol (e.g., 'XLE', 'CL=F')
+            days: Number of recent days to return (None for all data)
+            
+        Returns:
+            DataFrame with OHLCV data
+        """
+        # Convert ticker format for filename
+        filename = ticker.replace('=', '_') + '.csv'
+        filepath = os.path.join(self.data_dir, filename)
+        
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"No data file found for ticker {ticker}")
+        
+        df = pd.read_csv(filepath, index_col=0, parse_dates=True)
+        
+        if days:
+            df = df.tail(days)
+            
+        return df
+    
+    def get_latest_prices(self, tickers: List[str] = None) -> pd.DataFrame:
+        """
+        Get latest price and change for specified tickers
+        
+        Args:
+            tickers: List of ticker symbols (None for all available)
+            
+        Returns:
+            DataFrame with latest price data
+        """
+        if tickers is None:
+            tickers = self.get_available_tickers()
+        
+        results = []
+        for ticker in tickers:
+            try:
+                data = self.load_ticker_data(ticker, days=2)  # Get last 2 days for change calc
+                if len(data) >= 1:
+                    latest = data.iloc[-1]
+                    prev = data.iloc[-2] if len(data) >= 2 else data.iloc[-1]
+                    
+                    change = latest['Close'] - prev['Close']
+                    change_pct = (change / prev['Close']) * 100
+                    
+                    results.append({
+                        'Ticker': ticker,
+                        'Name': latest.get('Name', ''),
+                        'Price': latest['Close'],
+                        'Change': change,
+                        'Change_%': change_pct,
+                        'Volume': latest['Volume'],
+                        'Date': data.index[-1]
+                    })
+            except Exception as e:
+                print(f"Error loading data for {ticker}: {e}")
+                continue
+        
+        return pd.DataFrame(results)
+    
+    def get_commodity_prices(self) -> Dict[str, Dict]:
+        """Get latest prices for commodity-related tickers"""
+        commodity_tickers = ['CL=F', 'NG=F', 'BZ=F', 'RB=F', 'HO=F', 'USO', 'UNG']
+        price_data = self.get_latest_prices(commodity_tickers)
+        
+        commodity_map = {
+            'CL=F': 'WTI Crude Oil',
+            'NG=F': 'Natural Gas',
+            'BZ=F': 'Brent Crude',
+            'RB=F': 'Gasoline',
+            'HO=F': 'Heating Oil',
+            'USO': 'US Oil Fund',
+            'UNG': 'US Natural Gas Fund'
+        }
+        
+        result = {}
+        for _, row in price_data.iterrows():
+            ticker = row['Ticker']
+            if ticker in commodity_map:
+                result[commodity_map[ticker]] = {
+                    'price': row['Price'],
+                    'change': row['Change'],
+                    'change_pct': row['Change_%'],
+                    'volume': row['Volume']
+                }
+        
+        return result
+    
+    def get_equity_prices(self) -> Dict[str, Dict]:
+        """Get latest prices for energy equity tickers"""
+        equity_tickers = ['XLE', 'XOP', 'VDE', 'IYE', 'XOM', 'CVX', 'COP', 'SLB', 'HAL', 'BKR', 'OXY']
+        price_data = self.get_latest_prices(equity_tickers)
+        
+        equity_map = {
+            'XLE': 'Energy Select Sector SPDR',
+            'XOP': 'SPDR S&P Oil & Gas Exploration',
+            'VDE': 'Vanguard Energy ETF',
+            'IYE': 'iShares U.S. Energy ETF',
+            'XOM': 'Exxon Mobil',
+            'CVX': 'Chevron',
+            'COP': 'ConocoPhillips',
+            'SLB': 'Schlumberger',
+            'HAL': 'Halliburton',
+            'BKR': 'Baker Hughes',
+            'OXY': 'Occidental Petroleum'
+        }
+        
+        result = {}
+        for _, row in price_data.iterrows():
+            ticker = row['Ticker']
+            if ticker in equity_map:
+                result[equity_map[ticker]] = {
+                    'ticker': ticker,
+                    'price': row['Price'],
+                    'change': row['Change'],
+                    'change_pct': row['Change_%'],
+                    'volume': row['Volume']
+                }
+        
+        return result
 
 
 if __name__ == "__main__":

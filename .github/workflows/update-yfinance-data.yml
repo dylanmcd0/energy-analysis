@@ -1,0 +1,68 @@
+name: Update YFinance Data
+
+on:
+  schedule:
+    # Run every morning at 6:00 AM UTC (adjust timezone as needed)
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run yfinance data update script
+      run: |
+        python scripts/update_yfinance_data.py
+        
+    - name: Check for changes
+      id: verify-changed-files
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Commit and push changes to dev
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data/financial/yfinance/
+        git commit -m "🤖 Automated yfinance data update - $(date +'%Y-%m-%d %H:%M:%S UTC')"
+        git push
+        
+    - name: No changes detected
+      if: steps.verify-changed-files.outputs.changed == 'false'
+      run: |
+        echo "No changes detected in financial data. Skipping commit."
+
+    - name: Merge dev into master
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git fetch origin
+        git checkout master
+        git merge dev --no-edit
+        git push origin master
