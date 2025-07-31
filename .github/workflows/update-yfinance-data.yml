@@ -45,7 +45,7 @@ jobs:
           echo "changed=false" >> $GITHUB_OUTPUT
         fi
         
-    - name: Commit and push changes
+    - name: Commit and push changes to dev
       if: steps.verify-changed-files.outputs.changed == 'true'
       run: |
         git config --local user.email "action@github.com"
@@ -58,3 +58,11 @@ jobs:
       if: steps.verify-changed-files.outputs.changed == 'false'
       run: |
         echo "No changes detected in financial data. Skipping commit."
+
+    - name: Merge dev into master
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git fetch origin
+        git checkout master
+        git merge dev --no-edit
+        git push origin master
