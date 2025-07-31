@@ -4,6 +4,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import yfinance as yf
+import sys
+import os
+
+# Add src directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+from data_fetcher import YFinanceDataLoader
 
 st.set_page_config(page_title="Dashboard", page_icon="📊", layout="wide")
 
@@ -49,6 +55,41 @@ def get_market_data(ticker):
     except:
         pass
     return None, None
+
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def get_csv_market_data():
+    """Get market data from CSV files"""
+    try:
+        loader = YFinanceDataLoader()
+        commodity_prices = loader.get_commodity_prices()
+        equity_prices = loader.get_equity_prices()
+        return commodity_prices, equity_prices, None
+    except Exception as e:
+        return {}, {}, str(e)
+
+@st.cache_data(ttl=300)
+def get_commodity_chart_data():
+    """Get historical commodity data for chart"""
+    try:
+        loader = YFinanceDataLoader()
+        
+        # Get last 30 days of data for key commodities
+        ng_data = loader.load_ticker_data('NG=F', days=30)
+        cl_data = loader.load_ticker_data('CL=F', days=30)
+        bz_data = loader.load_ticker_data('BZ=F', days=30)
+        
+        # Create combined DataFrame
+        chart_data = pd.DataFrame({
+            'Date': ng_data.index,
+            'Natural Gas': ng_data['Close'],
+            'WTI Crude': cl_data['Close'],
+            'Brent Crude': bz_data['Close']
+        })
+        
+        return chart_data
+    except Exception as e:
+        st.error(f"Error loading chart data: {e}")
+        return pd.DataFrame()
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -117,27 +158,115 @@ if market_view == "Overview":
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Price Trends")
-        # Placeholder chart
-        dates = pd.date_range(start='2024-01-01', end='2024-12-31', freq='D')
-        sample_data = pd.DataFrame({
-            'Date': dates,
-            'Natural Gas': 2.5 + (dates.dayofyear / 365) * 0.7 + pd.Series(range(len(dates))).apply(lambda x: 0.1 * (x % 30 - 15) / 15),
-            'Crude Oil': 70 + (dates.dayofyear / 365) * 15 + pd.Series(range(len(dates))).apply(lambda x: 2 * (x % 30 - 15) / 15)
-        })
+        st.subheader("Energy Commodity Prices")
         
-        fig = px.line(sample_data, x='Date', y=['Natural Gas', 'Crude Oil'],
-                     title="Energy Commodity Prices")
-        st.plotly_chart(fig, use_container_width=True)
+        # Get real commodity chart data
+        commodity_chart_data = get_commodity_chart_data()
+        
+        if not commodity_chart_data.empty:
+            # Create multi-axis chart since Natural Gas and Oil have different scales
+            fig = go.Figure()
+            
+            # Natural Gas (left y-axis)
+            fig.add_trace(go.Scatter(
+                x=commodity_chart_data['Date'],
+                y=commodity_chart_data['Natural Gas'],
+                name='Natural Gas ($/MMBtu)',
+                line=dict(color='blue'),
+                yaxis='y'
+            ))
+            
+            # WTI Crude (right y-axis)
+            fig.add_trace(go.Scatter(
+                x=commodity_chart_data['Date'],
+                y=commodity_chart_data['WTI Crude'],
+                name='WTI Crude ($/bbl)',
+                line=dict(color='red'),
+                yaxis='y2'
+            ))
+            
+            # Brent Crude (right y-axis)
+            fig.add_trace(go.Scatter(
+                x=commodity_chart_data['Date'],
+                y=commodity_chart_data['Brent Crude'],
+                name='Brent Crude ($/bbl)',
+                line=dict(color='orange'),
+                yaxis='y2'
+            ))
+            
+            # Update layout with dual y-axes
+            fig.update_layout(
+                title="Energy Commodity Prices (30 Days)",
+                xaxis=dict(title="Date"),
+                yaxis=dict(
+                    title="Natural Gas ($/MMBtu)",
+                    titlefont=dict(color="blue"),
+                    tickfont=dict(color="blue"),
+                    side="left"
+                ),
+                yaxis2=dict(
+                    title="Crude Oil ($/bbl)",
+                    titlefont=dict(color="red"),
+                    tickfont=dict(color="red"),
+                    overlaying="y",
+                    side="right"
+                ),
+                hovermode='x unified',
+                height=400
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Commodity price chart data not available")
     
     with col2:
-        st.subheader("Regional Power Demand")
-        # Placeholder regional data
-        regions = ['Northeast', 'Southeast', 'Midwest', 'West', 'Texas']
-        demand = [95, 120, 88, 105, 142]
+        st.subheader("Energy ETF Performance")
         
-        fig = px.bar(x=regions, y=demand, title="Current Power Demand by Region (GW)")
-        st.plotly_chart(fig, use_container_width=True)
+        # Get ETF data and create performance comparison
+        commodity_prices, equity_prices, load_error = get_csv_market_data()
+        
+        if not load_error and equity_prices:
+            # Create ETF performance chart
+            etf_data = []
+            etf_names = ['Energy Select Sector SPDR', 'SPDR S&P Oil & Gas Exploration', 
+                        'Vanguard Energy ETF', 'iShares U.S. Energy ETF']
+            
+            for name in etf_names:
+                if name in equity_prices:
+                    data = equity_prices[name]
+                    etf_data.append({
+                        'ETF': name.replace('Energy Select Sector SPDR', 'XLE')
+                                  .replace('SPDR S&P Oil & Gas Exploration', 'XOP')
+                                  .replace('Vanguard Energy ETF', 'VDE')
+                                  .replace('iShares U.S. Energy ETF', 'IYE'),
+                        'Price': data['price'],
+                        'Change_%': data['change_pct']
+                    })
+            
+            if etf_data:
+                df = pd.DataFrame(etf_data)
+                
+                # Create bar chart with color based on performance
+                colors = ['green' if x > 0 else 'red' for x in df['Change_%']]
+                
+                fig = px.bar(df, x='ETF', y='Change_%', 
+                           title="Energy ETF Daily Performance (%)",
+                           color='Change_%',
+                           color_continuous_scale=['red', 'white', 'green'],
+                           color_continuous_midpoint=0)
+                
+                fig.update_layout(
+                    yaxis_title="Daily Change (%)",
+                    xaxis_title="Energy ETFs",
+                    height=400,
+                    showlegend=False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("ETF performance data not available")
+        else:
+            st.info("ETF performance data not available")
     
     # Additional market data sections
     st.markdown("---")
