@@ -91,232 +91,204 @@ def get_commodity_chart_data():
         st.error(f"Error loading chart data: {e}")
         return pd.DataFrame()
 
-# Sidebar filters
-st.sidebar.header("Filters")
-market_view = st.sidebar.selectbox(
-    "Market View",
-    ["Overview", "Power", "Oil & Gas", "Equities"]
-)
-
-time_range = st.sidebar.selectbox(
-    "Time Range",
-    ["1D", "1W", "1M", "3M", "1Y", "YTD"]
-)
-
 # Main dashboard content
-if market_view == "Overview":
-    st.subheader("Market Overview")
+st.subheader("Market Overview")
+
+# Key metrics row
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    ng_price, ng_change = get_market_data('NG=F')
+    if ng_price:
+        st.metric(
+            label="Natural Gas (Henry Hub)",
+            value=f"${ng_price:.2f}/MMBtu",
+            delta=f"{ng_change:.2f}%" if ng_change else None
+        )
+    else:
+        st.metric(label="Natural Gas (Henry Hub)", value="Loading...")
+
+with col2:
+    wti_price, wti_change = get_market_data('CL=F')
+    if wti_price:
+        st.metric(
+            label="Crude Oil (WTI)",
+            value=f"${wti_price:.2f}/bbl",
+            delta=f"{wti_change:.2f}%" if wti_change else None
+        )
+    else:
+        st.metric(label="Crude Oil (WTI)", value="Loading...")
+
+with col3:
+    brent_price, brent_change = get_market_data('BZ=F')
+    if brent_price:
+        st.metric(
+            label="Brent Crude Oil",
+            value=f"${brent_price:.2f}/bbl",
+            delta=f"{brent_change:.2f}%" if brent_change else None
+        )
+    else:
+        st.metric(label="Brent Crude Oil", value="Loading...")
+
+with col4:
+    xle_price, xle_change = get_market_data('XLE')
+    if xle_price:
+        st.metric(
+            label="Energy Sector ETF (XLE)",
+            value=f"${xle_price:.2f}",
+            delta=f"{xle_change:.2f}%" if xle_change else None
+        )
+    else:
+        st.metric(label="Energy Sector ETF (XLE)", value="Loading...")
+
+# Charts row
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Energy Commodity Prices")
     
-    # Key metrics row
-    col1, col2, col3, col4 = st.columns(4)
+    # Get real commodity chart data
+    commodity_chart_data = get_commodity_chart_data()
     
-    with col1:
-        ng_price, ng_change = get_market_data('NG=F')
-        if ng_price:
-            st.metric(
-                label="Natural Gas (Henry Hub)",
-                value=f"${ng_price:.2f}/MMBtu",
-                delta=f"{ng_change:.2f}%" if ng_change else None
-            )
-        else:
-            st.metric(label="Natural Gas (Henry Hub)", value="Loading...")
-    
-    with col2:
-        wti_price, wti_change = get_market_data('CL=F')
-        if wti_price:
-            st.metric(
-                label="Crude Oil (WTI)",
-                value=f"${wti_price:.2f}/bbl",
-                delta=f"{wti_change:.2f}%" if wti_change else None
-            )
-        else:
-            st.metric(label="Crude Oil (WTI)", value="Loading...")
-    
-    with col3:
-        brent_price, brent_change = get_market_data('BZ=F')
-        if brent_price:
-            st.metric(
-                label="Brent Crude Oil",
-                value=f"${brent_price:.2f}/bbl",
-                delta=f"{brent_change:.2f}%" if brent_change else None
-            )
-        else:
-            st.metric(label="Brent Crude Oil", value="Loading...")
-    
-    with col4:
-        xle_price, xle_change = get_market_data('XLE')
-        if xle_price:
-            st.metric(
-                label="Energy Sector ETF (XLE)",
-                value=f"${xle_price:.2f}",
-                delta=f"{xle_change:.2f}%" if xle_change else None
-            )
-        else:
-            st.metric(label="Energy Sector ETF (XLE)", value="Loading...")
-    
-    # Charts row
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Energy Commodity Prices")
+    if not commodity_chart_data.empty:
+        # Create multi-axis chart since Natural Gas and Oil have different scales
+        fig = go.Figure()
         
-        # Get real commodity chart data
-        commodity_chart_data = get_commodity_chart_data()
+        # Natural Gas (left y-axis)
+        fig.add_trace(go.Scatter(
+            x=commodity_chart_data['Date'],
+            y=commodity_chart_data['Natural Gas'],
+            name='Natural Gas ($/MMBtu)',
+            line=dict(color='blue'),
+            yaxis='y'
+        ))
         
-        if not commodity_chart_data.empty:
-            # Create multi-axis chart since Natural Gas and Oil have different scales
-            fig = go.Figure()
+        # WTI Crude (right y-axis)
+        fig.add_trace(go.Scatter(
+            x=commodity_chart_data['Date'],
+            y=commodity_chart_data['WTI Crude'],
+            name='WTI Crude ($/bbl)',
+            line=dict(color='red'),
+            yaxis='y2'
+        ))
+        
+        # Brent Crude (right y-axis)
+        fig.add_trace(go.Scatter(
+            x=commodity_chart_data['Date'],
+            y=commodity_chart_data['Brent Crude'],
+            name='Brent Crude ($/bbl)',
+            line=dict(color='orange'),
+            yaxis='y2'
+        ))
+        
+        # Update layout with dual y-axes
+        fig.update_layout(
+            title="Energy Commodity Prices (30 Days)",
+            xaxis=dict(title="Date"),
+            yaxis=dict(
+                title=dict(text="Natural Gas ($/MMBtu)", font=dict(color="blue")),
+                tickfont=dict(color="blue"),
+                side="left"
+            ),
+            yaxis2=dict(
+                title=dict(text="Crude Oil ($/bbl)", font=dict(color="red")),
+                tickfont=dict(color="red"),
+                overlaying="y",
+                side="right"
+            ),
+            hovermode='x unified',
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Commodity price chart data not available")
+
+with col2:
+    st.subheader("Energy ETF Performance")
+    
+    # Get ETF data and create performance comparison
+    commodity_prices, equity_prices, load_error = get_csv_market_data()
+    
+    if not load_error and equity_prices:
+        # Create ETF performance chart
+        etf_data = []
+        etf_names = ['Energy Select Sector SPDR', 'SPDR S&P Oil & Gas Exploration', 
+                    'Vanguard Energy ETF', 'iShares U.S. Energy ETF']
+        
+        for name in etf_names:
+            if name in equity_prices:
+                data = equity_prices[name]
+                etf_data.append({
+                    'ETF': name.replace('Energy Select Sector SPDR', 'XLE')
+                                .replace('SPDR S&P Oil & Gas Exploration', 'XOP')
+                                .replace('Vanguard Energy ETF', 'VDE')
+                                .replace('iShares U.S. Energy ETF', 'IYE'),
+                    'Price': data['price'],
+                    'Change_%': data['change_pct']
+                })
+        
+        if etf_data:
+            df = pd.DataFrame(etf_data)
             
-            # Natural Gas (left y-axis)
-            fig.add_trace(go.Scatter(
-                x=commodity_chart_data['Date'],
-                y=commodity_chart_data['Natural Gas'],
-                name='Natural Gas ($/MMBtu)',
-                line=dict(color='blue'),
-                yaxis='y'
-            ))
+            # Create bar chart with color based on performance
+            colors = ['green' if x > 0 else 'red' for x in df['Change_%']]
             
-            # WTI Crude (right y-axis)
-            fig.add_trace(go.Scatter(
-                x=commodity_chart_data['Date'],
-                y=commodity_chart_data['WTI Crude'],
-                name='WTI Crude ($/bbl)',
-                line=dict(color='red'),
-                yaxis='y2'
-            ))
+            fig = px.bar(df, x='ETF', y='Change_%', 
+                        title="Energy ETF Daily Performance (%)",
+                        color='Change_%',
+                        color_continuous_scale=['red', 'white', 'green'],
+                        color_continuous_midpoint=0)
             
-            # Brent Crude (right y-axis)
-            fig.add_trace(go.Scatter(
-                x=commodity_chart_data['Date'],
-                y=commodity_chart_data['Brent Crude'],
-                name='Brent Crude ($/bbl)',
-                line=dict(color='orange'),
-                yaxis='y2'
-            ))
-            
-            # Update layout with dual y-axes
             fig.update_layout(
-                title="Energy Commodity Prices (30 Days)",
-                xaxis=dict(title="Date"),
-                yaxis=dict(
-                    title="Natural Gas ($/MMBtu)",
-                    titlefont=dict(color="blue"),
-                    tickfont=dict(color="blue"),
-                    side="left"
-                ),
-                yaxis2=dict(
-                    title="Crude Oil ($/bbl)",
-                    titlefont=dict(color="red"),
-                    tickfont=dict(color="red"),
-                    overlaying="y",
-                    side="right"
-                ),
-                hovermode='x unified',
-                height=400
+                yaxis_title="Daily Change (%)",
+                xaxis_title="Energy ETFs",
+                height=400,
+                showlegend=False
             )
             
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Commodity price chart data not available")
-    
-    with col2:
-        st.subheader("Energy ETF Performance")
-        
-        # Get ETF data and create performance comparison
-        commodity_prices, equity_prices, load_error = get_csv_market_data()
-        
-        if not load_error and equity_prices:
-            # Create ETF performance chart
-            etf_data = []
-            etf_names = ['Energy Select Sector SPDR', 'SPDR S&P Oil & Gas Exploration', 
-                        'Vanguard Energy ETF', 'iShares U.S. Energy ETF']
-            
-            for name in etf_names:
-                if name in equity_prices:
-                    data = equity_prices[name]
-                    etf_data.append({
-                        'ETF': name.replace('Energy Select Sector SPDR', 'XLE')
-                                  .replace('SPDR S&P Oil & Gas Exploration', 'XOP')
-                                  .replace('Vanguard Energy ETF', 'VDE')
-                                  .replace('iShares U.S. Energy ETF', 'IYE'),
-                        'Price': data['price'],
-                        'Change_%': data['change_pct']
-                    })
-            
-            if etf_data:
-                df = pd.DataFrame(etf_data)
-                
-                # Create bar chart with color based on performance
-                colors = ['green' if x > 0 else 'red' for x in df['Change_%']]
-                
-                fig = px.bar(df, x='ETF', y='Change_%', 
-                           title="Energy ETF Daily Performance (%)",
-                           color='Change_%',
-                           color_continuous_scale=['red', 'white', 'green'],
-                           color_continuous_midpoint=0)
-                
-                fig.update_layout(
-                    yaxis_title="Daily Change (%)",
-                    xaxis_title="Energy ETFs",
-                    height=400,
-                    showlegend=False
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("ETF performance data not available")
-        else:
             st.info("ETF performance data not available")
-    
-    # Additional market data sections
-    st.markdown("---")
-    
-    col_left, col_right = st.columns(2)
-    
-    with col_left:
-        st.markdown("### 🛢️ Energy Commodities")
-        for name, ticker in commodities.items():
-            price, change = get_market_data(ticker)
-            if price:
-                col_name, col_price, col_change = st.columns([3, 2, 1])
-                with col_name:
-                    st.write(name)
-                with col_price:
-                    st.write(f"${price:.2f}")
-                with col_change:
-                    if change:
-                        color = "🟢" if change > 0 else "🔴" if change < 0 else "⚪"
-                        st.write(f"{color} {change:.2f}%")
-    
-    with col_right:
-        st.markdown("### 📈 Energy Equities")
-        for name, ticker in equities.items():
-            price, change = get_market_data(ticker)
-            if price:
-                col_name, col_price, col_change = st.columns([3, 2, 1])
-                with col_name:
-                    st.write(name)
-                with col_price:
-                    st.write(f"${price:.2f}")
-                with col_change:
-                    if change:
-                        color = "🟢" if change > 0 else "🔴" if change < 0 else "⚪"
-                        st.write(f"{color} {change:.2f}%")
+    else:
+        st.info("ETF performance data not available")
 
-elif market_view == "Power":
-    st.subheader("Power Markets")
-    st.info("Power market data and analysis will be displayed here")
-    
-elif market_view == "Oil & Gas":
-    st.subheader("Oil & Gas Markets")
-    st.info("Oil & gas market data and analysis will be displayed here")
-    
-elif market_view == "Equities":
-    st.subheader("Energy Equities")
-    st.info("Energy sector equity analysis will be displayed here")
+# Additional market data sections
+st.markdown("---")
+
+col_left, col_right = st.columns(2)
+
+with col_left:
+    st.markdown("### 🛢️ Energy Commodities")
+    for name, ticker in commodities.items():
+        price, change = get_market_data(ticker)
+        if price:
+            col_name, col_price, col_change = st.columns([3, 2, 1])
+            with col_name:
+                st.write(name)
+            with col_price:
+                st.write(f"${price:.2f}")
+            with col_change:
+                if change:
+                    color = "🟢" if change > 0 else "🔴" if change < 0 else "⚪"
+                    st.write(f"{color} {change:.2f}%")
+
+with col_right:
+    st.markdown("### 📈 Energy Equities")
+    for name, ticker in equities.items():
+        price, change = get_market_data(ticker)
+        if price:
+            col_name, col_price, col_change = st.columns([3, 2, 1])
+            with col_name:
+                st.write(name)
+            with col_price:
+                st.write(f"${price:.2f}")
+            with col_change:
+                if change:
+                    color = "🟢" if change > 0 else "🔴" if change < 0 else "⚪"
+                    st.write(f"{color} {change:.2f}%")
 
 # Data freshness indicator
-st.sidebar.markdown("---")
 st.sidebar.markdown("**Data Status**")
 st.sidebar.success("✅ Live - Updated 2 mins ago")
 st.sidebar.markdown("Next update: 15:30 EST")
