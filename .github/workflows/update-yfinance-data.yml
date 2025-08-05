@@ -2,9 +2,11 @@ name: Update YFinance Data
 
 on:
   schedule:
-    # Run every morning at 6:00 AM UTC (adjust timezone as needed)
     - cron: '0 6 * * *'
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
+
+permissions:
+  contents: write  # 🟢 Required to allow pushing commits
 
 jobs:
   update-data:
@@ -50,10 +52,11 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
         git add data/financial/yfinance/
         git commit -m "🤖 Automated yfinance data update - $(date +'%Y-%m-%d %H:%M:%S UTC')"
-        git push
-        
+        git push origin dev
+
     - name: No changes detected
       if: steps.verify-changed-files.outputs.changed == 'false'
       run: |
@@ -66,3 +69,5 @@ jobs:
         git checkout master
         git merge dev --no-edit
         git push origin master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
